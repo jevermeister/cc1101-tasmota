@@ -811,7 +811,10 @@ const uint16_t kGpioNiceList[] PROGMEM = {
   AGPIO(GPIO_TFMINIPLUS_TX),            // TFmini Plus TX pin
   AGPIO(GPIO_TFMINIPLUS_RX),            // TFmini Plus RX pin
 #endif
-
+#ifdef USE_SMARTRC
+  AGPIO(GPIO_CC1101_GDO0),              // CC1101 pin for TX
+  AGPIO(GPIO_CC1101_GDO2),              // CC1101 pin for RX
+#endif
 /*-------------------------------------------------------------------------------------------*\
  * Energy sensors
 \*-------------------------------------------------------------------------------------------*/
@@ -1055,7 +1058,7 @@ const uint16_t kGpioNiceList[] PROGMEM = {
   AGPIO(GPIO_DEEPSLEEP),
 #endif
 #ifdef USE_KEELOQ
-  AGPIO(GPIO_CC1101_GDO0),              // CC1101 pin for RX
+  AGPIO(GPIO_CC1101_GDO0),              // CC1101 pin for TX
   AGPIO(GPIO_CC1101_GDO2),              // CC1101 pin for RX
 #endif
 #ifdef USE_HRXL
