@@ -80,17 +80,25 @@ void RfReceiveCheck(void) {
 }
 
 void RfInit(void) {
-
-  if (PinUsed(GPIO_RFSEND) || Pin(GPIO_CC1101_GDO0)) {
+  //init TX
+  if (PinUsed(GPIO_RFSEND)) {
     mySwitch.enableTransmit(Pin(GPIO_RFSEND));
   }
-
+  //Init RX
   if (PinUsed(GPIO_RFRECV) || PinUsed(GPIO_CC1101_GDO2)) {
     if (Settings->rf_duplicate_time < 10) {
       Settings->rf_duplicate_time = RF_TIME_AVOID_DUPLICATE;
     }
-    pinMode( Pin(GPIO_RFRECV), INPUT);
-    mySwitch.enableReceive(Pin(GPIO_RFRECV));
+    if (PinUsed(GPIO_RFSEND)) {
+      pinMode( Pin(GPIO_RFRECV), INPUT);
+      mySwitch.enableReceive(Pin(GPIO_RFRECV));
+    }
+#ifdef USE_SMARTRC
+    if (PinUsed(GPIO_CC1101_GDO2) && smartRCConfig.trxState == 2) {
+      ELECHOUSE_cc1101.SetRx();
+      mySwitch.enableReceive(Pin(GPIO_CC1101_GDO2));
+    }    
+#endif      
     if (!Settings->rf_protocol_mask) {
       Settings->rf_protocol_mask = (1ULL << mySwitch.getNumProtos()) -1;
     }
@@ -206,20 +214,27 @@ void CmndRfSend(void)
     mySwitch.setRepeatTransmit(repeat);
     if (!bits) { bits = 24; }         // Default 24 bits
     if (data) {
+      if(PinUsed(GPIO_RFSEND)){
+        pinMode( Pin(GPIO_RFRECV), INPUT);
+        mySwitch.enableReceive(Pin(GPIO_RFRECV));
+        mySwitch.send(data, bits);
+      }
 #ifdef USE_SMARTRC
-      mySwitch.disableReceive(); 
-      mySwitch.enableTransmit(Pin(GPIO_CC1101_GDO0));
-      ELECHOUSE_cc1101.SetTx();
-#endif          
-      mySwitch.send(data, bits);
-      ResponseCmndDone();
-#ifdef USE_SMARTRC
-      if (PinUsed(GPIO_CC1101_GDO2)){
+      if(PinUsed(GPIO_CC1101_GDO0)){
+        mySwitch.disableReceive(); 
+        mySwitch.enableTransmit(Pin(GPIO_CC1101_GDO0));
+        ELECHOUSE_cc1101.setCCMode(0);
+        ELECHOUSE_cc1101.SetTx();
+        mySwitch.send(data, bits);
+        ELECHOUSE_cc1101.setCCMode(smartRCConfig.CCMode);
+      }    
+      if (PinUsed(GPIO_CC1101_GDO2) && smartRCConfig.trxState == 2){
         ELECHOUSE_cc1101.SetRx();
         mySwitch.disableTransmit();
         mySwitch.enableReceive(Pin(GPIO_CC1101_GDO2));
       }
 #endif
+    ResponseCmndDone();
     } else {
       error = true;
     }
