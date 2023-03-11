@@ -1674,10 +1674,6 @@ static void BLETaskStopStartNimBLE(NimBLEClient **ppClient, bool start = true){
   if (start){
     AddLog(LOG_LEVEL_INFO,PSTR("BLE: BLETask:Starting NimBLE"));
     NimBLEDevice::init("BLE_ESP32");
-    NimBLEDevice::setPower(ESP_PWR_LVL_P9, ESP_BLE_PWR_TYPE_ADV);
-    NimBLEDevice::setPower(ESP_PWR_LVL_P9, ESP_BLE_PWR_TYPE_SCAN);
-    NimBLEDevice::setPower(ESP_PWR_LVL_P9, ESP_BLE_PWR_TYPE_DEFAULT);
-
 
     *ppClient = NimBLEDevice::createClient();
     (*ppClient)->setClientCallbacks(&clientCB, false);
