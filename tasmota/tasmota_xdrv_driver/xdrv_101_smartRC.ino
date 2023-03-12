@@ -41,7 +41,7 @@ smartRCConfig smartRCConfig {12, 433.92, 0, 2, 1, 2, 0};
  * Commands
 \*********************************************************************************************/
 
-const char SmartRCCommands[] PROGMEM = "SmartRC|"  // SmartRC Prefix
+const char smartRCCommands[] PROGMEM = "smartRC|"  // smartRC Prefix
   "testSPI|"
   "setPA|"
   "setMHZ|"
@@ -50,21 +50,26 @@ const char SmartRCCommands[] PROGMEM = "SmartRC|"  // SmartRC Prefix
   "SetRx|"
   "setCrc|"
   "setSyncMode|"
-  "setModulation|";
+  "setModulation|"
+  "sendData|";
 
-void (* const SmartRCCommand[])(void) PROGMEM = {
-  &CmndSmartRCtestSPI,
-  &CmndSmartRCsetPA,
-  &CmndSmartRCsetMHZ,
-  &CmndSmartRCsetCCMode,
-  &CmndSmartRCSetTx,
-  &CmndSmartRCSetRx,
-  &CmndSmartRCsetCrc,
-  &CmndSmartRCsetSyncMode,
-  &CmndSmartRCsetModulation};
+void (* const smartRCCommand[])(void) PROGMEM = {
+  &CmndsmartRCtestSPI,
+  &CmndsmartRCsetPA,
+  &CmndsmartRCsetMHZ,
+  &CmndsmartRCsetCCMode,
+  &CmndsmartRCSetTx,
+  &CmndsmartRCSetRx,
+  &CmndsmartRCsetCrc,
+  &CmndsmartRCsetSyncMode,
+  &CmndsmartRCsetModulation,
+  &CmndsmartRCsendData};
 
-void CmndSmartRCtestSPI(void) {
-  if(ELECHOUSE_cc1101.getCC1101()) { // Check the CC1101 Spi connection.
+/*
+Check the CC1101 Spi connection.
+*/
+void CmndsmartRCtestSPI(void) {
+  if(ELECHOUSE_cc1101.getCC1101()) {
     AddLog(LOG_LEVEL_INFO, PSTR("CC1101 SPI connected!"));
   }else{
     AddLog(LOG_LEVEL_INFO, PSTR("CC1101 SPI not connected!"));
@@ -72,7 +77,11 @@ void CmndSmartRCtestSPI(void) {
   ResponseCmndDone();
 }
 
-void CmndSmartRCsetPA(void) {
+/*
+set TxPower. The following settings are possible depending on the frequency band.  
+(-30  -20  -15  -10  -6    0    5    7    10   11   12) Default is max (12)!
+*/
+void CmndsmartRCsetPA(void) {
   if(ELECHOUSE_cc1101.getCC1101()) {
     if(XdrvMailbox.payload > -30 || XdrvMailbox.payload < 12){
       smartRCConfig.powerLevel = XdrvMailbox.payload;
@@ -86,7 +95,10 @@ void CmndSmartRCsetPA(void) {
   }
 }
 
-void CmndSmartRCsetMHZ(void) {
+/*
+(default = 433.92).The cc1101 can: 300-348 MHZ, 387-464MHZ and 779-928MHZ
+*/
+void CmndsmartRCsetMHZ(void) {
   if(ELECHOUSE_cc1101.getCC1101()) {
     if(XdrvMailbox.data_len > 0){
       smartRCConfig.frequency = CharToFloat(XdrvMailbox.data);
@@ -98,7 +110,10 @@ void CmndSmartRCsetMHZ(void) {
   }
 }
 
-void CmndSmartRCsetCCMode(void) {
+/*
+set config for internal transmission mode. ON/OFF
+*/
+void CmndsmartRCsetCCMode(void) {
   if(ELECHOUSE_cc1101.getCC1101()) {
     if(XdrvMailbox.payload > -1 && XdrvMailbox.payload < 2){
       smartRCConfig.CCMode = XdrvMailbox.payload;
@@ -112,7 +127,11 @@ void CmndSmartRCsetCCMode(void) {
   }
 }
 
-void CmndSmartRCSetTx(void){
+/*
+Set to transmit mode
+trxstate = 1 (TX)
+*/
+void CmndsmartRCSetTx(void){
   if(ELECHOUSE_cc1101.getCC1101()) {
     smartRCConfig.trxState = 1;
     ELECHOUSE_cc1101.SetTx();
@@ -122,7 +141,11 @@ void CmndSmartRCSetTx(void){
   }
 }
 
-void CmndSmartRCSetRx(void){
+/*
+Set to receive mode
+trxstate = 2 (RX)
+*/
+void CmndsmartRCSetRx(void){
   if(ELECHOUSE_cc1101.getCC1101()) {
     smartRCConfig.trxState = 2;
     ELECHOUSE_cc1101.SetRx();
@@ -132,7 +155,11 @@ void CmndSmartRCSetRx(void){
   }
 }
 
-void CmndSmartRCsetCrc(void) {
+/*
+1 = CRC calculation in TX and CRC check in RX enabled. 0 = CRC disabled for TX and RX.
+CRC Check. If "setCrc(false)" crc returns always OK!
+*/
+void CmndsmartRCsetCrc(void) {
   if(ELECHOUSE_cc1101.getCC1101()) {
     if(XdrvMailbox.payload > -1 && XdrvMailbox.payload < 2){
       smartRCConfig.CRC = XdrvMailbox.payload;
@@ -146,7 +173,18 @@ void CmndSmartRCsetCrc(void) {
   }
 }
 
-void CmndSmartRCsetSyncMode(void) {
+/*
+Combined sync-word qualifier mode. 
+0 = No preamble/sync. 
+1 = 16 sync word bits detected. 
+2 = 16/16 sync word bits detected. 
+3 = 30/32 sync word bits detected. 
+4 = No preamble/sync, carrier-sense above threshold. 
+5 = 15/16 + carrier-sense above threshold. 
+6 = 16/16 + carrier-sense above threshold. 
+7 = 30/32 + carrier-sense above threshold.
+*/
+void CmndsmartRCsetSyncMode(void) {
   if(ELECHOUSE_cc1101.getCC1101()) {
     if(XdrvMailbox.payload > -1 && XdrvMailbox.payload < 8){
       smartRCConfig.syncMode = XdrvMailbox.payload;
@@ -160,7 +198,10 @@ void CmndSmartRCsetSyncMode(void) {
   }
 }
 
-void CmndSmartRCsetModulation(void) {
+/*
+set modulation mode. 0 = 2-FSK, 1 = GFSK, 2 = ASK/OOK, 3 = 4-FSK, 4 = MSK.
+*/
+void CmndsmartRCsetModulation(void) {
   if(ELECHOUSE_cc1101.getCC1101()) {
     if(XdrvMailbox.payload > -1 && XdrvMailbox.payload < 5){
       smartRCConfig.modulation = XdrvMailbox.payload;
@@ -174,17 +215,36 @@ void CmndSmartRCsetModulation(void) {
   }
 }
 
+
+/*
+Senddata via old Method with GD0
+size: number of data to send, no more than 61
+*/
+void CmndsmartRCsendData(void) {
+  if(ELECHOUSE_cc1101.getCC1101()) {
+    if(XdrvMailbox.data_len > 0 && XdrvMailbox.data_len < 62){
+      ELECHOUSE_cc1101.SendData(XdrvMailbox.data);
+      ResponseCmndDone();
+    } else {
+      AddLog(LOG_LEVEL_ERROR, PSTR("Not a valid value!"));
+    } 
+  } else {
+    AddLog(LOG_LEVEL_ERROR, PSTR("CC1101 SPI not connected!"));
+  }
+}
+
 /*********************************************************************************************\
  * Tasmota Functions (Helpers)
 \*********************************************************************************************/
 
+/* 
+Initialize the CC1101
+*/
 void smartRCInit(){
-  
-  //SPI
   if (PinUsed(GPIO_SPI_CLK) && PinUsed(GPIO_SPI_MISO) && PinUsed(GPIO_SPI_MOSI) && PinUsed(GPIO_SPI_CS)) {
-    //should be used with VSPI (18, 19, 23, 5)
+    //may be used with VSPI (18, 19, 23, 5)
     ELECHOUSE_cc1101.setSpiPin(Pin(GPIO_SPI_CLK), Pin(GPIO_SPI_MISO), Pin(GPIO_SPI_MOSI), Pin(GPIO_SPI_CS));
-    if(ELECHOUSE_cc1101.getCC1101()) { // Check the CC1101 Spi connection.
+    if(ELECHOUSE_cc1101.getCC1101()) {
       ELECHOUSE_cc1101.Init();
       ELECHOUSE_cc1101.setMHZ(smartRCConfig.frequency);
       ELECHOUSE_cc1101.setPA(smartRCConfig.powerLevel);
@@ -202,13 +262,49 @@ void smartRCInit(){
   //RX e.g. GPIO 4
   if (PinUsed(GPIO_CC1101_GDO2) && smartRCConfig.trxState == 2){
     ELECHOUSE_cc1101.SetRx();
+    //only one TX-PIN is needed for all libraries.
+#ifdef USE_RC_SWITCH
+    SetPin(Pin(GPIO_CC1101_GDO2), AGPIO(GPIO_TUYA_TX));
+#endif
   }
 }
 
+/* 
+Check if a message can be received.
+*/
 void smartRCReceive(){
-  
+  if (ELECHOUSE_cc1101.CheckReceiveFlag()){
+    if (ELECHOUSE_cc1101.CheckCRC()){
+      int8_t lqi = ELECHOUSE_cc1101.getLqi();
+      int16_t rssi = ELECHOUSE_cc1101.getRssi();
+      uint8_t rxBuffer[61] = {0};
+      uint8_t len = ELECHOUSE_cc1101.ReceiveData(rxBuffer);
+      ResponseTime_P(PSTR(",\"" D_JSON_RFRECEIVED "\":{\"" D_JSON_DATA "\":%s,\"" D_JSON_SIZE "\":%d,\"" D_JSON_SIGNALSTRENGTH "\":%d,\"" D_JSON_RSSI "\":%d}}"), rxBuffer, len, lqi, rssi);
+      MqttPublishPrefixTopicRulesProcess_P(RESULT_OR_TELE, PSTR(D_JSON_RFRECEIVED));
+    }else{
+      AddLog(LOG_LEVEL_INFO, PSTR("CC1101 received message with invalid CRC."));
+    }
+  }
 }
 
+/* 
+Reconfigure the module to the current smartRCConfig
+This is needed if you change settings temporarily, e.g. for sending with a different library
+*/
+void smartRCreconfigure(){
+  ELECHOUSE_cc1101.setCCMode(smartRCConfig.CCMode);
+  switch(smartRCConfig.trxState){
+    case 0:
+      ELECHOUSE_cc1101.setSidle();
+      break;
+    case 1:
+      ELECHOUSE_cc1101.SetTx();
+      break;
+    case 2:
+      ELECHOUSE_cc1101.SetRx();
+      break;    
+  }
+}
 
 /*********************************************************************************************\
  * Interface
@@ -228,7 +324,7 @@ bool Xdrv101(uint32_t function)
         break;
 
       case FUNC_COMMAND:
-        result = DecodeCommand(SmartRCCommands, SmartRCCommand);
+        result = DecodeCommand(smartRCCommands, smartRCCommand);
         break;
 
       case FUNC_INIT:

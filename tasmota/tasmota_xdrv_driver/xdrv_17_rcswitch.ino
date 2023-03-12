@@ -42,6 +42,7 @@ void (* const RfCommands[])(void) PROGMEM = {
   &CmndRfSend, &CmndRfProtocol, &CmndRfTimeOut};
 
 #include <RCSwitch.h>
+
 RCSwitch mySwitch = RCSwitch();
 
 #define RF_TIME_AVOID_DUPLICATE 1000  // Milliseconds
@@ -80,25 +81,15 @@ void RfReceiveCheck(void) {
 }
 
 void RfInit(void) {
-  //init TX
   if (PinUsed(GPIO_RFSEND)) {
     mySwitch.enableTransmit(Pin(GPIO_RFSEND));
   }
-  //Init RX
-  if (PinUsed(GPIO_RFRECV) || PinUsed(GPIO_CC1101_GDO2)) {
+  if (PinUsed(GPIO_RFRECV)) {
     if (Settings->rf_duplicate_time < 10) {
       Settings->rf_duplicate_time = RF_TIME_AVOID_DUPLICATE;
     }
-    if (PinUsed(GPIO_RFSEND)) {
-      pinMode( Pin(GPIO_RFRECV), INPUT);
-      mySwitch.enableReceive(Pin(GPIO_RFRECV));
-    }
-#ifdef USE_SMARTRC
-    if (PinUsed(GPIO_CC1101_GDO2) && smartRCConfig.trxState == 2) {
-      ELECHOUSE_cc1101.SetRx();
-      mySwitch.enableReceive(Pin(GPIO_CC1101_GDO2));
-    }    
-#endif      
+    pinMode( Pin(GPIO_RFRECV), INPUT);
+    mySwitch.enableReceive(Pin(GPIO_RFRECV));
     if (!Settings->rf_protocol_mask) {
       Settings->rf_protocol_mask = (1ULL << mySwitch.getNumProtos()) -1;
     }
@@ -111,7 +102,7 @@ void RfInit(void) {
 \*********************************************************************************************/
 
 void CmndRfProtocol(void) {
-  if (!PinUsed(GPIO_RFRECV) && !PinUsed(GPIO_CC1101_GDO2)) { return; }
+  if (!PinUsed(GPIO_RFRECV)) { return; }
 
 //  AddLog(LOG_LEVEL_INFO, PSTR("RFR:CmndRfRxProtocol:: index:%d usridx:%d data_len:%d data:\"%s\""),XdrvMailbox.index, XdrvMailbox.usridx, XdrvMailbox.data_len,XdrvMailbox.data);
 
@@ -161,7 +152,7 @@ void CmndRfProtocol(void) {
 
 void CmndRfSend(void)
 {
-  if (!PinUsed(GPIO_RFSEND) && !PinUsed(GPIO_CC1101_GDO0)) { return; }
+  if (!PinUsed(GPIO_RFSEND)) { return; }
 
   bool error = false;
 
@@ -214,27 +205,15 @@ void CmndRfSend(void)
     mySwitch.setRepeatTransmit(repeat);
     if (!bits) { bits = 24; }         // Default 24 bits
     if (data) {
-      if(PinUsed(GPIO_RFSEND)){
-        pinMode( Pin(GPIO_RFRECV), INPUT);
-        mySwitch.enableReceive(Pin(GPIO_RFRECV));
-        mySwitch.send(data, bits);
-      }
 #ifdef USE_SMARTRC
-      if(PinUsed(GPIO_CC1101_GDO0)){
-        mySwitch.disableReceive(); 
-        mySwitch.enableTransmit(Pin(GPIO_CC1101_GDO0));
-        ELECHOUSE_cc1101.setCCMode(0);
-        ELECHOUSE_cc1101.SetTx();
-        mySwitch.send(data, bits);
-        ELECHOUSE_cc1101.setCCMode(smartRCConfig.CCMode);
-      }    
-      if (PinUsed(GPIO_CC1101_GDO2) && smartRCConfig.trxState == 2){
-        ELECHOUSE_cc1101.SetRx();
-        mySwitch.disableTransmit();
-        mySwitch.enableReceive(Pin(GPIO_CC1101_GDO2));
-      }
+      ELECHOUSE_cc1101.setCCMode(0);
+      ELECHOUSE_cc1101.SetTx();
+#endif      
+      mySwitch.send(data, bits);
+      ResponseCmndDone();
+#ifdef USE_SMARTRC
+      smartRCreconfigure();
 #endif
-    ResponseCmndDone();
     } else {
       error = true;
     }
@@ -261,19 +240,16 @@ bool Xdrv17(uint32_t function)
 {
   bool result = false;
 
-  if (PinUsed(GPIO_RFSEND) || PinUsed(GPIO_RFRECV) || PinUsed(GPIO_CC1101_GDO0) || PinUsed(GPIO_CC1101_GDO2)) {
+  if (PinUsed(GPIO_RFSEND) || PinUsed(GPIO_RFRECV)) {
     switch (function) {
-
       case FUNC_EVERY_50_MSECOND:
-        if (PinUsed(GPIO_RFRECV) || PinUsed(GPIO_CC1101_GDO2)) {
+        if (PinUsed(GPIO_RFRECV)) {
           RfReceiveCheck();
         }
         break;
-
       case FUNC_COMMAND:
         result = DecodeCommand(kRfCommands, RfCommands);
-        break;
-        
+        break; 
       case FUNC_INIT:
         RfInit();
         break;
