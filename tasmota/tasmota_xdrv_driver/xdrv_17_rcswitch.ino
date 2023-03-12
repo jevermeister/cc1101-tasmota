@@ -249,7 +249,7 @@ bool Xdrv17(uint32_t function)
         break;
       case FUNC_COMMAND:
         result = DecodeCommand(kRfCommands, RfCommands);
-        break; 
+        break;
       case FUNC_INIT:
         RfInit();
         break;
