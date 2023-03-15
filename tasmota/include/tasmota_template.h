@@ -208,6 +208,7 @@ enum UserSelectablePins {
   GPIO_BIOPDU_PZEM0XX_TX, GPIO_BIOPDU_PZEM016_RX, GPIO_BIOPDU_BIT, // Biomine BioPDU 625x12
   GPIO_MCP23XXX_INT, GPIO_MCP23SXX_CS,  // MCP23xxx Int and SPI Chip select
   GPIO_PCF8574_INT,                     // PCF8574 interrupt
+  GPIO_ESPILIGHT_TX, GPIO_ESPILIGHT_RX, //ESPiLight PINs
   GPIO_SENSOR_END };
 
 // Error as warning to rethink GPIO usage with max 2045
@@ -463,6 +464,7 @@ const char kSensorNames[] PROGMEM =
   D_SENSOR_BIOPDU_PZEM0XX_TX "|" D_SENSOR_BIOPDU_PZEM016_RX "|" D_SENSOR_BIOPDU_BIT "|"
   D_SENSOR_MCP23XXX_INT "|" D_SENSOR_MCP23SXX_CS "|"
   D_SENSOR_PCF8574_INT "|"
+  D_SENSOR_ESPILIGHT_TX "|" D_SENSOR_ESPILIGHT_RX "|"
   ;
 
 const char kSensorNamesFixed[] PROGMEM =
@@ -815,6 +817,11 @@ const uint16_t kGpioNiceList[] PROGMEM = {
   AGPIO(GPIO_CC1101_GDO0),              // CC1101 pin for TX
   AGPIO(GPIO_CC1101_GDO2),              // CC1101 pin for RX
 #endif
+#ifdef USE_ESPILIGHT
+  AGPIO(GPIO_ESPILIGHT_TX),               // RF transmitter
+  AGPIO(GPIO_ESPILIGHT_RX),               // RF receiver
+#endif
+
 /*-------------------------------------------------------------------------------------------*\
  * Energy sensors
 \*-------------------------------------------------------------------------------------------*/

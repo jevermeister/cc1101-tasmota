@@ -262,10 +262,6 @@ void smartRCInit(){
   //RX e.g. GPIO 4
   if (PinUsed(GPIO_CC1101_GDO2) && smartRCConfig.trxState == 2){
     ELECHOUSE_cc1101.SetRx();
-    //only one TX-PIN is needed for all libraries.
-#ifdef USE_RC_SWITCH
-    SetPin(Pin(GPIO_CC1101_GDO2), AGPIO(GPIO_TUYA_TX));
-#endif
   }
 }
 
