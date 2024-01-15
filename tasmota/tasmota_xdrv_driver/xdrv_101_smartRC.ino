@@ -102,7 +102,7 @@ void CmndsmartRCsetMHZ(void) {
   if(ELECHOUSE_cc1101.getCC1101()) {
     if(XdrvMailbox.data_len > 0){
       smartRCConfig.frequency = CharToFloat(XdrvMailbox.data);
-      ELECHOUSE_cc1101.setPA(smartRCConfig.frequency);
+      ELECHOUSE_cc1101.setMHZ(smartRCConfig.frequency);
       ResponseCmndFloat(smartRCConfig.frequency, 2);
     }
   } else {
